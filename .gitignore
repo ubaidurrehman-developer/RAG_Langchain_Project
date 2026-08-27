@@ -1,0 +1,8 @@
+/Learning
+/venv
+.env
+sample.PDF
+sample_ai_paper.md
+
+/__pycache__
+/.ipynb_checkpoints

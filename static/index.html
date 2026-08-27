@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ubaid's Retrieval System — Document Vector Intelligence</title>
+  <meta name="description" content="High-precision document retrieval and semantic search engine powered by LangChain, OpenAI Embeddings, and Chroma Vector Database.">
+  
+  <!-- Fonts: Inter for UI and JetBrains Mono for data/chunks -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Marked for Markdown Parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+  <div class="app-layout">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="brand-badge">UR</div>
+        <div class="brand-info">
+          <div class="brand-title-line">
+            <h1 class="brand-title">Ubaid's Retrieval System</h1>
+            <span class="system-tag">v2.4 Core</span>
+          </div>
+          <p class="brand-meta">Semantic Vector Retrieval • ChromaDB • OpenAI Embeddings</p>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div class="status-indicator">
+          <span class="status-indicator-dot" id="system-status-dot"></span>
+          <span class="status-indicator-label" id="system-status-text">Engine Ready</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Workspace Container -->
+    <main class="workspace-container">
+      
+      <!-- VIEW 1: DOCUMENT INGESTION (Visible when no doc is active) -->
+      <section id="upload-section" class="ingest-section panel-box active-view">
+        <div class="ingest-header">
+          <div class="section-badge">
+            <i data-lucide="layers" class="badge-icon"></i>
+            <span>Document Ingestion Gateway</span>
+          </div>
+          <h2 class="section-title">Upload Document to Initialize Retrieval</h2>
+          <p class="section-desc">
+            Submit your document to parse text contents, generate high-dimensional vector embeddings, and build an indexed Chroma collection for low-latency retrieval.
+          </p>
+        </div>
+
+        <!-- Drag & Drop Zone -->
+        <div class="dropzone-container" id="drop-zone">
+          <input type="file" id="file-input" class="file-input-hidden" accept=".pdf,.docx,.doc,.txt,.md,.json,.csv,.py" />
+          
+          <div class="dropzone-inner">
+            <div class="dropzone-icon-box">
+              <i data-lucide="file-up" class="dropzone-icon"></i>
+            </div>
+            <h3 class="dropzone-title">Select or drag & drop document file</h3>
+            <p class="dropzone-help">Click to browse your local directory or drop files directly into this target area</p>
+            
+            <div class="format-list">
+              <span class="format-badge">PDF</span>
+              <span class="format-badge">DOCX</span>
+              <span class="format-badge">TXT</span>
+              <span class="format-badge">MARKDOWN</span>
+              <span class="format-badge">CSV / JSON</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ingestion Processing State Card -->
+        <div id="upload-progress-card" class="ingest-processing-card hidden">
+          <div class="processing-top">
+            <div class="processing-label-group">
+              <div class="spinner-circle"></div>
+              <span id="progress-step-text" class="processing-title">Ingesting and Vectorizing Document...</span>
+            </div>
+            <span id="progress-percent" class="processing-counter">Processing</span>
+          </div>
+          <div class="processing-meter-bar">
+            <div id="progress-bar-fill" class="processing-meter-fill"></div>
+          </div>
+          <p class="processing-detail" id="progress-subdetail">Extracting tokens, computing vector embeddings, and writing to ChromaDB...</p>
+        </div>
+      </section>
+
+      <!-- VIEW 2: ACTIVE RETRIEVAL CONSOLE (Visible once document is uploaded) -->
+      <section id="chat-section" class="retrieval-section hidden">
+        
+        <!-- Active Document Technical Telemetry Panel -->
+        <div class="doc-telemetry-panel panel-box">
+          <div class="doc-telemetry-left">
+            <div class="doc-type-icon">
+              <i data-lucide="file-text"></i>
+            </div>
+            <div class="doc-meta-block">
+              <div class="doc-headline">
+                <span class="doc-active-indicator"></span>
+                <h3 id="active-doc-filename" class="doc-name">document.pdf</h3>
+                <span class="doc-status-badge">Indexed in Chroma</span>
+              </div>
+              <div class="doc-stats-row">
+                <div class="stat-cell">
+                  <span class="stat-label">Chunks:</span>
+                  <span class="stat-value" id="metric-chunks">0</span>
+                </div>
+                <div class="stat-divider">|</div>
+                <div class="stat-cell">
+                  <span class="stat-label">Pages:</span>
+                  <span class="stat-value" id="metric-pages">0</span>
+                </div>
+                <div class="stat-divider">|</div>
+                <div class="stat-cell">
+                  <span class="stat-label">Characters:</span>
+                  <span class="stat-value" id="metric-chars">0</span>
+                </div>
+                <div class="stat-divider">|</div>
+                <div class="stat-cell">
+                  <span class="stat-label">Store:</span>
+                  <span class="stat-value">Chroma In-Memory</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="doc-telemetry-right">
+            <button id="change-doc-btn" class="btn btn-secondary-danger" title="Purge index and upload new document">
+              <i data-lucide="rotate-ccw" class="btn-icon"></i>
+              <span>Reset & Upload New</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Interactive Query Console -->
+        <div class="console-panel panel-box">
+          
+          <!-- Suggested Search Inquiries -->
+          <div class="query-suggestions-bar">
+            <span class="suggestions-label"><i data-lucide="terminal"></i> Suggested Inquiries:</span>
+            <div class="suggestion-chip-group" id="suggestion-chips">
+              <button class="query-chip" data-prompt="Provide a comprehensive executive summary of this document.">
+                Executive Summary
+              </button>
+              <button class="query-chip" data-prompt="What are the key technical findings and main conclusions?">
+                Key Findings & Conclusions
+              </button>
+              <button class="query-chip" data-prompt="List all quantitative metrics, dates, and figures mentioned in the text.">
+                Metrics & Quantitative Data
+              </button>
+              <button class="query-chip" data-prompt="What actionable recommendations or next steps are outlined in the document?">
+                Recommendations & Action Items
+              </button>
+            </div>
+          </div>
+
+          <!-- Messages Stream View -->
+          <div class="messages-viewport" id="messages-container">
+            <!-- Initial Ready Message -->
+            <div class="console-message assistant-msg initial-msg">
+              <div class="msg-avatar">
+                <i data-lucide="cpu" class="avatar-icon"></i>
+              </div>
+              <div class="msg-content-wrapper">
+                <div class="msg-header">
+                  <span class="sender-title">Ubaid's Retrieval Assistant</span>
+                  <span class="badge-blue"><i data-lucide="check"></i> Ready for Querying</span>
+                </div>
+                <div class="msg-body">
+                  <p>The uploaded document is indexed in Chroma Vector Store. Submit any question below to retrieve grounded answers with direct citations and chunk inspection.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Question Input Deck -->
+          <div class="input-deck">
+            <form id="ask-form" class="query-form">
+              <div class="query-box">
+                <textarea 
+                  id="question-input" 
+                  class="query-textarea" 
+                  rows="1" 
+                  placeholder="Enter your question to query the indexed document..."
+                  required
+                ></textarea>
+                
+                <div class="query-controls">
+                  <span class="query-hint"><kbd>Enter</kbd> to execute • <kbd>Shift+Enter</kbd> for newline</span>
+                  <button type="submit" id="send-btn" class="btn btn-primary" title="Execute Query">
+                    <i data-lucide="arrow-up-right" class="btn-icon"></i>
+                    <span>Query</span>
+                  </button>
+                </div>
+              </div>
+            </form>
+            
+            <div class="deck-footer">
+              <div class="footer-meta">
+                <span>Pipeline: LangChain RAG • Chroma Vector Search • GPT-4o-mini</span>
+              </div>
+              <button id="clear-chat-btn" class="btn-text-danger" title="Clear console conversation history">
+                <i data-lucide="trash-2"></i> Clear History
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- Global Toast Alert Container -->
+    <div id="toast-container" class="toast-stack"></div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
